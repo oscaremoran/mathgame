@@ -1,0 +1,299 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Level Map Screen (Quest mode) -->
+<div id="screen-map" class="screen">
+    <div class="map-header">
+        <h1 class="realm-title" id="map-realm-title"></h1>
+        <div class="map-stats">
+            <span class="stat">Score: <strong id="map-score">0</strong></span>
+        </div>
+    </div>
+    <div class="level-path" id="level-path"></div>
+    <div class="map-actions">
+        <button class="btn btn-secondary" id="btn-back-menu" onclick="window.location.href='/'">Change Realm</button>
+    </div>
+</div>
+
+<!-- Dungeon Floor Intro Screen -->
+<div id="screen-dungeon-intro" class="screen hidden">
+    <div class="intro-card dungeon-intro-card">
+        <div class="dungeon-floor-badge" id="dungeon-floor-badge">Floor 1</div>
+        <h2 class="intro-level-name" id="dungeon-floor-title">The Descent Begins</h2>
+        <p class="intro-desc" id="dungeon-floor-desc"></p>
+        <div class="dungeon-hp-preview">&#x1F9E1; HP: <strong id="dungeon-hp-preview">100</strong></div>
+        <div class="boss-intro hidden" id="dungeon-boss-intro">
+            <div class="boss-intro-icon">&#x1F47E;</div>
+            <div class="boss-intro-name" id="dungeon-boss-name"></div>
+            <div class="boss-intro-hp" id="dungeon-boss-hp"></div>
+            <div class="boss-special-warning" id="dungeon-boss-warning">Beware their special attack!</div>
+        </div>
+        <button class="btn btn-primary btn-large" id="btn-dungeon-ready">Descend!</button>
+    </div>
+</div>
+
+<!-- Gauntlet Intro Screen -->
+<div id="screen-gauntlet-intro" class="screen hidden">
+    <div class="intro-card gauntlet-intro-card">
+        <div class="gauntlet-skull">&#x1F480;</div>
+        <h2 class="intro-level-name">Survival Gauntlet</h2>
+        <p class="intro-desc">One wrong answer. One timeout. That's all it takes.</p>
+        <p class="gauntlet-timer-info">15 seconds per problem. No mercy.</p>
+        <button class="btn btn-primary btn-large" id="btn-gauntlet-ready">I'm Ready</button>
+    </div>
+</div>
+
+<!-- Level Intro Screen -->
+<div id="screen-intro" class="screen hidden">
+    <div class="intro-card">
+        <div class="intro-realm" id="intro-realm"></div>
+        <h2 class="intro-level-name" id="intro-level-name"></h2>
+        <p class="intro-desc" id="intro-desc"></p>
+        <div class="intro-example hidden" id="intro-example"></div>
+        <div class="intro-stats">
+            <span class="intro-stat" id="intro-problems-stat">&#x2694;&#xFE0F; <span id="intro-problems">0</span> problems</span>
+            <span class="intro-stat">&#x1F9E1; 100 HP</span>
+        </div>
+        <div class="boss-intro hidden" id="boss-intro">
+            <div class="boss-intro-icon">&#x1F47E;</div>
+            <div class="boss-intro-name" id="boss-intro-name"></div>
+            <div class="boss-intro-hp" id="boss-intro-hp"></div>
+        </div>
+        <button class="btn btn-primary btn-large" id="btn-ready">Ready? Go!</button>
+    </div>
+</div>
+
+<!-- Gameplay Screen -->
+<div id="screen-play" class="screen hidden">
+    <div class="play-top-bar">
+        <div class="hp-container">
+            <div class="hp-label">HP</div>
+            <div class="hp-bar-outer">
+                <div class="hp-bar-inner" id="hp-bar"></div>
+            </div>
+            <div class="hp-text" id="hp-text">100</div>
+        </div>
+        <div class="score-display">
+            <span id="play-score">0</span> pts
+        </div>
+        <div class="streak-display" id="streak-display">
+            <span class="streak-icon" id="streak-icon"></span>
+            <span id="streak-count">0</span>
+        </div>
+    </div>
+
+    <!-- Dungeon floor indicator -->
+    <div class="dungeon-floor-bar hidden" id="dungeon-floor-bar">
+        <span class="dungeon-floor-label">Floor <strong id="dungeon-floor-num">1</strong> / 30</span>
+        <div class="dungeon-floor-progress-outer">
+            <div class="dungeon-floor-progress-inner" id="dungeon-floor-progress"></div>
+        </div>
+    </div>
+
+    <!-- Gauntlet survived counter -->
+    <div class="gauntlet-survived-bar hidden" id="gauntlet-survived-bar">
+        <span class="gauntlet-survived-label">Survived: <strong id="gauntlet-survived-count">0</strong></span>
+    </div>
+
+    <!-- Boss special warning overlay -->
+    <div class="boss-special-overlay hidden" id="boss-special-overlay">
+        <div class="boss-special-text" id="boss-special-text"></div>
+    </div>
+
+    <!-- Boss HP bar (hidden for normal levels) -->
+    <div class="boss-bar-container hidden" id="boss-bar-container">
+        <div class="boss-bar-label" id="boss-bar-label">Boss</div>
+        <div class="boss-bar-outer">
+            <div class="boss-bar-inner" id="boss-bar"></div>
+        </div>
+        <div class="boss-bar-hp" id="boss-bar-hp">80</div>
+    </div>
+
+    <!-- Boss enraged banner -->
+    <div class="boss-enraged-banner hidden" id="boss-enraged-banner">
+        <span id="enraged-text"></span>
+    </div>
+
+    <!-- Charge meter (boss fights only) -->
+    <div class="charge-container hidden" id="charge-container">
+        <div class="charge-label">POWER</div>
+        <div class="charge-pips" id="charge-pips">
+            <div class="charge-pip" data-index="0"></div>
+            <div class="charge-pip" data-index="1"></div>
+            <div class="charge-pip" data-index="2"></div>
+            <div class="charge-pip" data-index="3"></div>
+            <div class="charge-pip" data-index="4"></div>
+        </div>
+        <div class="charge-text">STRIKE</div>
+    </div>
+
+    <div class="progress-container" id="progress-container">
+        <div class="progress-bar" id="progress-bar"></div>
+        <div class="progress-text" id="progress-text">1 / 8</div>
+    </div>
+
+    <!-- Timer display -->
+    <div class="timer-container hidden" id="timer-container">
+        <div class="timer-bar-outer">
+            <div class="timer-bar-inner" id="timer-bar"></div>
+        </div>
+        <div class="timer-text" id="timer-text"></div>
+    </div>
+
+    <div class="problem-area">
+        <div class="problem-card" id="problem-card">
+            <div class="problem-expression" id="problem-expression"></div>
+            <div class="problem-equals">= ?</div>
+        </div>
+
+        <div class="answer-area">
+            <input type="number" id="answer-input" class="answer-input" placeholder="Your answer"
+                   autocomplete="off" inputmode="numeric">
+            <button class="btn btn-primary" id="btn-submit">Submit</button>
+        </div>
+    </div>
+
+    <div class="feedback-overlay hidden" id="feedback-overlay">
+        <div class="feedback-content" id="feedback-content"></div>
+    </div>
+</div>
+
+<!-- Level Complete Screen -->
+<div id="screen-complete" class="screen hidden">
+    <div class="complete-card">
+        <h2 class="complete-title" id="complete-title">Level Complete!</h2>
+        <div class="boss-defeat-banner hidden" id="boss-defeat-banner">
+            <span class="boss-defeat-icon">&#x1F480;</span>
+            <span class="boss-defeat-name" id="boss-defeat-name"></span>
+            <span class="boss-defeat-text">has been defeated!</span>
+        </div>
+        <div class="stars-display" id="stars-display"></div>
+        <div class="complete-stats">
+            <div class="complete-stat">
+                <span class="stat-label">Accuracy</span>
+                <span class="stat-value" id="complete-accuracy">0%</span>
+            </div>
+            <div class="complete-stat">
+                <span class="stat-label">Best Streak</span>
+                <span class="stat-value" id="complete-streak">0</span>
+            </div>
+            <div class="complete-stat">
+                <span class="stat-label">Level Score</span>
+                <span class="stat-value" id="complete-level-score">0</span>
+            </div>
+            <div class="complete-stat">
+                <span class="stat-label">Completion Bonus</span>
+                <span class="stat-value" id="complete-bonus">0</span>
+            </div>
+        </div>
+        <p class="complete-message" id="complete-message"></p>
+        <div class="achievement-popup hidden" id="achievement-popup"></div>
+        <div class="complete-actions">
+            <button class="btn btn-primary" id="btn-next-level">Next Level</button>
+            <button class="btn btn-secondary" id="btn-back-map">Level Map</button>
+        </div>
+    </div>
+</div>
+
+<!-- Game Over Screen -->
+<div id="screen-gameover" class="screen hidden">
+    <div class="gameover-card">
+        <h2 class="gameover-title">Defeated!</h2>
+        <p class="gameover-message">Your wizard has fallen, but every defeat makes you stronger.</p>
+        <div class="gameover-stats">
+            <div class="complete-stat">
+                <span class="stat-label">Problems Solved</span>
+                <span class="stat-value" id="gameover-solved">0</span>
+            </div>
+            <div class="complete-stat">
+                <span class="stat-label">Score This Attempt</span>
+                <span class="stat-value" id="gameover-score">0</span>
+            </div>
+        </div>
+        <div class="gameover-actions">
+            <button class="btn btn-primary" id="btn-retry">Retry Level</button>
+            <button class="btn btn-secondary" id="btn-gameover-map">Level Map</button>
+        </div>
+    </div>
+</div>
+<!-- Dungeon Complete Screen -->
+<div id="screen-dungeon-complete" class="screen hidden">
+    <div class="complete-card">
+        <h2 class="complete-title">Dungeon Conquered!</h2>
+        <p class="dungeon-complete-msg">You descended all 30 floors and emerged victorious!</p>
+        <div class="complete-stats">
+            <div class="complete-stat">
+                <span class="stat-label">Final HP</span>
+                <span class="stat-value" id="dungeon-final-hp">0</span>
+            </div>
+            <div class="complete-stat">
+                <span class="stat-label">Dungeon Score</span>
+                <span class="stat-value" id="dungeon-final-score">0</span>
+            </div>
+            <div class="complete-stat">
+                <span class="stat-label">Accuracy</span>
+                <span class="stat-value" id="dungeon-final-accuracy">0%</span>
+            </div>
+            <div class="complete-stat">
+                <span class="stat-label">Best Streak</span>
+                <span class="stat-value" id="dungeon-final-streak">0</span>
+            </div>
+        </div>
+        <div class="complete-actions">
+            <button class="btn btn-primary" onclick="window.location.href='/'">Return Home</button>
+        </div>
+    </div>
+</div>
+
+<!-- Dungeon Game Over Screen -->
+<div id="screen-dungeon-gameover" class="screen hidden">
+    <div class="gameover-card">
+        <h2 class="gameover-title">The Dungeon Claims Another...</h2>
+        <p class="gameover-message" id="dungeon-death-msg">You fell on floor 1.</p>
+        <div class="gameover-stats">
+            <div class="complete-stat">
+                <span class="stat-label">Deepest Floor</span>
+                <span class="stat-value" id="dungeon-death-floor">1</span>
+            </div>
+            <div class="complete-stat">
+                <span class="stat-label">Dungeon Score</span>
+                <span class="stat-value" id="dungeon-death-score">0</span>
+            </div>
+        </div>
+        <div class="gameover-actions">
+            <button class="btn btn-primary" onclick="window.location.href='/'">Return Home</button>
+        </div>
+    </div>
+</div>
+
+<!-- Gauntlet Game Over Screen -->
+<div id="screen-gauntlet-gameover" class="screen hidden">
+    <div class="gameover-card gauntlet-gameover-card">
+        <h2 class="gameover-title">Fallen.</h2>
+        <p class="gameover-message">The gauntlet is merciless.</p>
+        <div class="gameover-stats">
+            <div class="complete-stat">
+                <span class="stat-label">Problems Survived</span>
+                <span class="stat-value" id="gauntlet-final-survived">0</span>
+            </div>
+            <div class="complete-stat">
+                <span class="stat-label">Score</span>
+                <span class="stat-value" id="gauntlet-final-score">0</span>
+            </div>
+            <div class="complete-stat">
+                <span class="stat-label">Best Streak</span>
+                <span class="stat-value" id="gauntlet-final-streak">0</span>
+            </div>
+        </div>
+        <div class="gameover-actions">
+            <button class="btn btn-primary" onclick="window.location.href='/'">Return Home</button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/animations.js"></script>
+<script src="/static/js/game.js"></script>
+{% endblock %}

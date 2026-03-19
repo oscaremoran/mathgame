@@ -1,0 +1,332 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Floating math background -->
+<div class="math-bg" id="math-bg"></div>
+
+<div class="title-screen">
+    <div class="title-container">
+        <h1 class="game-title">Math Quest</h1>
+        {% if player_name %}
+        <p class="welcome-back">Welcome back, <strong>{{ player_name }}</strong>!</p>
+        {% endif %}
+        <p class="subtitle">A Wizard's Journey Through the Realms of Numbers</p>
+    </div>
+
+    <!-- Accounts Section -->
+    <div class="accounts-section" id="accounts-section">
+        <h3 class="accounts-title">Choose Your Wizard</h3>
+        <div class="accounts-list" id="accounts-list">
+            {% for acct in accounts %}
+            <div class="account-row" data-name="{{ acct }}">
+                <button class="account-btn {% if acct == player_name %}account-active{% endif %}" onclick="loadAccount('{{ acct }}')">
+                    <span class="account-icon">&#x1F9D9;</span>
+                    <span class="account-name">{{ acct }}</span>
+                </button>
+                <button class="account-delete-btn" onclick="deleteAccount('{{ acct }}')" title="Delete account">&times;</button>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="new-account-row">
+            <input type="text" id="new-account-name" placeholder="New wizard name..." maxlength="20" class="new-account-input">
+            <button class="btn btn-secondary btn-small" id="btn-create-account" onclick="createAccount()">Create</button>
+        </div>
+    </div>
+
+    <div class="menu-card">
+        <div class="name-section">
+            <label for="player-name">Your Wizard Name</label>
+            <input type="text" id="player-name" placeholder="Enter your name..." maxlength="20" value="{{ player_name or 'Wizard' }}">
+        </div>
+
+        <!-- Mode Selection -->
+        <div class="mode-section">
+            <h2>Choose Your Mode</h2>
+            <div class="mode-tabs">
+                <button class="mode-tab selected" data-mode="quest" id="mode-quest">
+                    <span class="mode-tab-icon">&#x1F3F0;</span>
+                    <span class="mode-tab-name">Quest</span>
+                    <span class="mode-tab-desc">5 levels per realm, boss fights</span>
+                </button>
+                <button class="mode-tab" data-mode="dungeon" id="mode-dungeon">
+                    <span class="mode-tab-icon">&#x1F5FF;</span>
+                    <span class="mode-tab-name">Endless Dungeon</span>
+                    <span class="mode-tab-desc">30 floors, 3 bosses, no healing</span>
+                </button>
+                <button class="mode-tab" data-mode="gauntlet" id="mode-gauntlet">
+                    <span class="mode-tab-icon">&#x1F480;</span>
+                    <span class="mode-tab-name">Survival Gauntlet</span>
+                    <span class="mode-tab-desc">One miss = death. Expert problems.</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Timer Toggle (quest only) -->
+        <div class="timer-toggle-section" id="timer-toggle-section">
+            <label class="timer-toggle-label">
+                <input type="checkbox" id="timers-off" {% if timers_off %}checked{% endif %}>
+                <span class="timer-toggle-slider"></span>
+                <span class="timer-toggle-text">Turn off timers <span class="timer-toggle-hint">(for young kids &mdash; no auto-fail, but 0 points after 30s)</span></span>
+            </label>
+        </div>
+
+        <div class="difficulty-section" id="difficulty-section">
+            <h2>Choose Your Realm</h2>
+            <div class="difficulty-grid">
+                <button class="difficulty-btn selected" data-difficulty="easy" data-status="{{ realm_status.easy }}">
+                    <span class="realm-icon">&#x1F332;</span>
+                    <span class="realm-name">The Enchanted Forest</span>
+                    <span class="realm-desc">Addition &bull; Numbers 1-20</span>
+                    <span class="realm-tag">Easy</span>
+                </button>
+                <button class="difficulty-btn {% if realm_status.medium == 'locked' %}realm-locked{% endif %}" data-difficulty="medium" data-status="{{ realm_status.medium }}">
+                    <span class="realm-icon">&#x1F48E;</span>
+                    <span class="realm-name">The Crystal Caverns</span>
+                    <span class="realm-desc">Addition &amp; Subtraction &bull; Numbers 1-50</span>
+                    <span class="realm-tag">Medium</span>
+                    {% if realm_status.medium == 'warning' %}
+                    <span class="realm-warning">&#x26A0;&#xFE0F; Recommended: Complete Easy first</span>
+                    {% endif %}
+                </button>
+                <button class="difficulty-btn {% if realm_status.hard == 'locked' %}realm-locked{% endif %}" data-difficulty="hard" data-status="{{ realm_status.hard }}">
+                    <span class="realm-icon">&#x26F0;&#xFE0F;</span>
+                    <span class="realm-name">The Frozen Mountains</span>
+                    <span class="realm-desc">All Four Operations &bull; Numbers 1-100</span>
+                    <span class="realm-tag">Hard</span>
+                    {% if realm_status.hard == 'locked' %}
+                    <span class="realm-lock-msg">&#x1F512; Complete Crystal Caverns to unlock</span>
+                    {% endif %}
+                </button>
+                <button class="difficulty-btn {% if realm_status.expert == 'locked' %}realm-locked{% endif %}" data-difficulty="expert" data-status="{{ realm_status.expert }}">
+                    <span class="realm-icon">&#x1F409;</span>
+                    <span class="realm-name">The Dragon's Keep</span>
+                    <span class="realm-desc">Multi-step &amp; Parentheses</span>
+                    <span class="realm-tag">Expert</span>
+                    {% if realm_status.expert == 'locked' %}
+                    <span class="realm-lock-msg">&#x1F512; Complete Frozen Mountains to unlock</span>
+                    {% endif %}
+                </button>
+            </div>
+        </div>
+
+        <!-- Dungeon info (hidden by default) -->
+        <div class="mode-info hidden" id="dungeon-info">
+            <div class="mode-info-content">
+                <p><strong>30 floors</strong> of escalating difficulty. <strong>No healing.</strong></p>
+                <p>Floors 1-10: Addition &amp; Subtraction</p>
+                <p>Floors 11-20: All Four Operations</p>
+                <p>Floors 21-30: Multi-step &amp; Parentheses</p>
+                <p class="mode-info-bosses">Bosses at floors 10, 20, and 30 with special attacks!</p>
+            </div>
+        </div>
+
+        <!-- Gauntlet info (hidden by default) -->
+        <div class="mode-info hidden" id="gauntlet-info">
+            <div class="mode-info-content">
+                <p><strong>One wrong answer and you're dead.</strong></p>
+                <p>Expert-level problems from the start. 15 second timer.</p>
+                <p>How many points can you rack up before you fall?</p>
+            </div>
+        </div>
+
+        <button class="start-btn" id="start-btn">Begin Your Quest</button>
+    </div>
+
+    <div class="achievements-section">
+        <button class="achievements-toggle" id="achievements-toggle">
+            <span class="achievements-toggle-title">Achievements</span>
+            <span class="achievements-toggle-count">{{ achievements|length }} / {{ ach_stats|length }}</span>
+        </button>
+        <div class="achievements-panel hidden" id="achievements-panel">
+            {% for aid, ach in ach_stats.items() %}
+            <div class="ach-card {% if ach.earned %}ach-earned{% else %}ach-locked{% endif %}">
+                <div class="ach-card-icon">{{ ach.icon }}</div>
+                <div class="ach-card-info">
+                    <div class="ach-card-name">{{ ach.name }}</div>
+                    <div class="ach-card-desc">{{ ach.description }}</div>
+                </div>
+                <div class="ach-card-pct">
+                    <div class="ach-pct-bar-outer">
+                        <div class="ach-pct-bar-inner" style="width: {{ ach.pct }}%"></div>
+                    </div>
+                    <div class="ach-pct-text">{{ ach.pct }}% of wizards</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="how-to-play">
+        <button class="toggle-help" id="toggle-help">How to Play</button>
+        <div class="help-content" id="help-content">
+            <ul>
+                <li>Solve math problems to progress through levels</li>
+                <li>You have a health bar (100 HP) &mdash; wrong answers deal damage</li>
+                <li>Harder realms deal more damage per wrong answer</li>
+                <li>Answer 3 fast in a row (&lt;5 sec) to heal 15 HP</li>
+                <li>Answer slowly (&gt;15 sec) and you lose 20% of your points</li>
+                <li>Take too long (30 sec) and it counts as wrong!</li>
+                <li>Build streaks for bonus multipliers</li>
+                <li>Answer quickly for speed bonuses</li>
+                <li>Earn up to 3 stars per level</li>
+                <li>Level 5 of each realm is a boss fight!</li>
+                <li>Complete all 5 levels to conquer a realm</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // --- Floating math background ---
+    function createMathBg() {
+        const container = document.getElementById('math-bg');
+        const expressions = [
+            '2 + 3', '7 - 4', '5 × 8', '12 ÷ 3', '9 + 6',
+            '15 - 7', '3 × 4', '20 ÷ 5', '8 + 9', '14 - 6',
+            '6 × 7', '18 ÷ 2', '11 + 5', '16 - 9', '4 × 9',
+            '24 ÷ 6', '(3 + 4) × 2', '5 + 3 × 2', '10 - 2 × 3',
+        ];
+        for (let i = 0; i < 15; i++) {
+            const el = document.createElement('div');
+            el.className = 'math-float';
+            el.textContent = expressions[Math.floor(Math.random() * expressions.length)];
+            el.style.left = (Math.random() * 90 + 5) + '%';
+            el.style.animationDuration = (15 + Math.random() * 20) + 's';
+            el.style.animationDelay = (Math.random() * 15) + 's';
+            el.style.fontSize = (0.8 + Math.random() * 0.8) + 'rem';
+            el.style.opacity = 0.06 + Math.random() * 0.08;
+            container.appendChild(el);
+        }
+    }
+    createMathBg();
+
+    // --- Accounts ---
+    async function loadAccount(name) {
+        const res = await fetch('/api/account/load', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({name}),
+        });
+        if (res.ok) {
+            window.location.reload();
+        }
+    }
+
+    async function deleteAccount(name) {
+        if (!confirm('Delete wizard "' + name + '"? All progress will be lost!')) return;
+        const res = await fetch('/api/account/delete', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({name}),
+        });
+        if (res.ok) {
+            window.location.reload();
+        }
+    }
+
+    function createAccount() {
+        const input = document.getElementById('new-account-name');
+        const name = input.value.trim();
+        if (!name) return;
+        document.getElementById('player-name').value = name;
+        // Just start a game with this name — the account is created on start
+        input.value = '';
+    }
+
+    // --- Mode selection ---
+    const modeTabs = document.querySelectorAll('.mode-tab');
+    let selectedMode = 'quest';
+
+    function updateModeUI() {
+        const diffSection = document.getElementById('difficulty-section');
+        const timerSection = document.getElementById('timer-toggle-section');
+        const dungeonInfo = document.getElementById('dungeon-info');
+        const gauntletInfo = document.getElementById('gauntlet-info');
+        const startBtn = document.getElementById('start-btn');
+
+        diffSection.classList.toggle('hidden', selectedMode !== 'quest');
+        timerSection.classList.toggle('hidden', selectedMode !== 'quest');
+        dungeonInfo.classList.toggle('hidden', selectedMode !== 'dungeon');
+        gauntletInfo.classList.toggle('hidden', selectedMode !== 'gauntlet');
+
+        if (selectedMode === 'quest') startBtn.textContent = 'Begin Your Quest';
+        else if (selectedMode === 'dungeon') startBtn.textContent = 'Enter the Dungeon';
+        else startBtn.textContent = 'Enter the Gauntlet';
+    }
+
+    modeTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            modeTabs.forEach(t => t.classList.remove('selected'));
+            tab.classList.add('selected');
+            selectedMode = tab.dataset.mode;
+            updateModeUI();
+        });
+    });
+
+    // --- Difficulty selection ---
+    const diffBtns = document.querySelectorAll('.difficulty-btn');
+    let selectedDifficulty = 'easy';
+
+    diffBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const status = btn.dataset.status;
+            if (status === 'locked') return;
+            diffBtns.forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            selectedDifficulty = btn.dataset.difficulty;
+        });
+    });
+
+    document.getElementById('start-btn').addEventListener('click', async () => {
+        const name = document.getElementById('player-name').value.trim() || 'Wizard';
+
+        if (selectedMode === 'quest') {
+            const timersOff = document.getElementById('timers-off').checked;
+            const res = await fetch('/api/start', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({difficulty: selectedDifficulty, player_name: name, timers_off: timersOff}),
+            });
+            if (res.ok) {
+                window.location.href = '/game';
+            } else {
+                const err = await res.json();
+                if (err.error === 'Realm locked') {
+                    alert('This realm is locked! Complete the previous realm first.');
+                }
+            }
+        } else if (selectedMode === 'dungeon') {
+            const res = await fetch('/api/start-dungeon', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({player_name: name}),
+            });
+            if (res.ok) window.location.href = '/game';
+        } else if (selectedMode === 'gauntlet') {
+            const res = await fetch('/api/start-gauntlet', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({player_name: name}),
+            });
+            if (res.ok) window.location.href = '/game';
+        }
+    });
+
+    document.getElementById('toggle-help').addEventListener('click', () => {
+        const content = document.getElementById('help-content');
+        content.classList.toggle('visible');
+    });
+
+    // Enter key in new-account input
+    document.getElementById('new-account-name').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') createAccount();
+    });
+
+    // Achievements panel toggle
+    document.getElementById('achievements-toggle').addEventListener('click', () => {
+        document.getElementById('achievements-panel').classList.toggle('hidden');
+    });
+</script>
+{% endblock %}
